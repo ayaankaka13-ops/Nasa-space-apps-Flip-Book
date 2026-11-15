@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Earth Pulse Field Station: Flipbook</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,600&family=Work+Sans:wght@400;500;600&display=swap">
+<style>
+:root{--bg:#e9e4d8;--paper:#fbf9f3;--back:#efeadc;--ink:#1d2a2a;--mute:#5d6b69;--accent:#0f7b6c;--line:#cfc8b6;--shadow:rgba(40,35,20,.25);box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#10181a;--paper:#1c2729;--back:#162022;--ink:#e8efec;--mute:#93a5a1;--accent:#4fd1b5;--line:#33444a;--shadow:rgba(0,0,0,.6)}}
+:root[data-theme="dark"]{--bg:#10181a;--paper:#1c2729;--back:#162022;--ink:#e8efec;--mute:#93a5a1;--accent:#4fd1b5;--line:#33444a;--shadow:rgba(0,0,0,.6)}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font-family:"Work Sans",system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;overflow:hidden}
+.stage{perspective:2200px;width:min(86vw,440px);aspect-ratio:3/4.1;max-height:76vh;position:relative}
+.book{position:absolute;inset:0;transform-style:preserve-3d;transition:transform .6s}
+.leaf{position:absolute;inset:0;transform-origin:left center;transform-style:preserve-3d;transition:transform .8s cubic-bezier(.5,.1,.2,1);cursor:pointer}
+.leaf.flipped{transform:rotateY(-180deg)}
+.face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:3px 10px 10px 3px;overflow:hidden;box-shadow:0 10px 30px var(--shadow)}
+.front{background:var(--paper);padding:9% 9% 11% 11%;display:flex;flex-direction:column;border-left:5px solid var(--accent)}
+.rear{background:var(--back);transform:rotateY(180deg);border-radius:10px 3px 3px 10px}
+h1,h2{font-family:"Newsreader",Georgia,serif;font-weight:600;margin:0 0 .5em;line-height:1.1}
+h2{font-size:clamp(26px,6.6vw,34px)}
+h1{font-size:clamp(38px,10vw,54px)}
+p,li{font-size:clamp(15px,3.9vw,17px);line-height:1.55;margin:0 0 .8em}
+ul{padding-left:1.1em;margin:0}
+.mute{color:var(--mute)}
+.pn{margin-top:auto;font-size:12px;color:var(--mute);display:flex;justify-content:space-between}
+.pulse{width:100%;height:70px;margin:18px 0}
+.pulse path{fill:none;stroke:var(--accent);stroke-width:3;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:900;stroke-dashoffset:900;animation:draw 2.4s ease-out .3s forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+.steps{list-style:none;padding:0;counter-reset:s}
+.steps li{counter-increment:s;display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line)}
+.steps li:before{content:counter(s);flex:none;width:26px;height:26px;border-radius:50%;background:var(--accent);color:var(--paper);font-weight:600;font-size:14px;display:grid;place-items:center}
+table{width:100%;border-collapse:collapse;font-size:clamp(14px,3.6vw,16px)}
+td{padding:9px 0;border-bottom:1px solid var(--line)}
+td:last-child{text-align:right;font-weight:600}
+a{color:var(--accent);font-weight:500;word-break:break-all}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:6px 0 12px}
+.two div{border:1px solid var(--line);border-radius:6px;padding:10px;font-size:14px;line-height:1.4}
+.two b{display:block;font-size:16px;margin-bottom:2px}
+.ctrl{display:flex;align-items:center;gap:14px;font-size:14px;color:var(--mute)}
+button{font:inherit;font-weight:500;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:9px 18px;cursor:pointer}
+button:hover:not(:disabled){border-color:var(--accent)}
+button:disabled{opacity:.35;cursor:default}
+button:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){.leaf{transition:none}.pulse path{animation:none;stroke-dashoffset:0}}
+</style>
+</head>
+<body>
+<div class="stage" id="stage"><div class="book" id="book"></div></div>
+<div class="ctrl">
+  <button id="prev" aria-label="Previous page">Back</button>
+  <span id="count" aria-live="polite"></span>
+  <button id="next" aria-label="Next page">Next</button>
+</div>
+<script>
+var pages=[
+`<h1>Earth Pulse Field Station</h1>
+<svg class="pulse" viewBox="0 0 400 70" aria-hidden="true"><path d="M0 38 H120 L140 38 L156 8 L176 62 L192 24 L204 38 H400"/></svg>
+<p>NASA Space Apps Challenge</p>
+<p class="mute">Team Schrödinger’s Cat<br>Mohamed Bilal, Ethan Mathew, Mohammed Ayaan Kaka</p>`,
+`<h2>The problem</h2>
+<p>Satellites show us the big picture.</p>
+<p>But climate and environmental change happens locally.</p>
+<p>At small scale, it is hard to verify what the satellites see.</p>`,
+`<h2>Our solution</h2>
+<p>A low-cost outdoor sensor station that measures conditions on site and flags unusual changes.</p>
+<p>Our website then compares the station’s data with NASA data for the same location.</p>`,
+`<h2>How it works</h2>
+<ol class="steps">
+<li>Sensors measure temperature, humidity, pressure and soil moisture</li>
+<li>An ESP32 builds a baseline and flags large deviations</li>
+<li>Data is sent over Wi-Fi to our website</li>
+<li>The website compares ground data with NASA data</li>
+</ol>`,
+`<h2>The hardware</h2>
+<ul>
+<li>ESP32 microcontroller with Wi-Fi</li>
+<li>BME280: temperature, humidity, pressure</li>
+<li>Capacitive soil moisture sensor</li>
+<li>Rechargeable battery with charging board</li>
+</ul>
+<p class="mute" style="margin-top:12px">Optional: solar panel, UV sensor, CO₂ sensor, GPS</p>`,
+`<h2>Detecting change</h2>
+<ul>
+<li>Measures every few minutes</li>
+<li>Learns what is normal for that place</li>
+<li>Flags readings that drift far from the baseline</li>
+<li>Alert LED on the station and a flag on the website</li>
+</ul>`,
+`<h2>Connecting to NASA data</h2>
+<div class="two"><div><b>NASA POWER</b>Temperature and weather</div><div><b>NASA SMAP</b>Soil moisture</div></div>
+<p>Same coordinates, same time period.</p>
+<p>Side-by-side charts show whether ground and satellite agree.</p>`,
+`<h2>3D-printed housing</h2>
+<ul>
+<li>Box: 140 × 98 × 42.5 mm</li>
+<li>Bays for battery, ESP32 and charger, with 0.4 mm clearance</li>
+<li>Four M2 screw posts for the BME280</li>
+<li>Gasket groove in the lid for a rain seal</li>
+<li>White PETG or ASA for UAE heat</li>
+</ul>`,
+`<h2>Cost</h2>
+<table>
+<tr><td>Lean version</td><td>about 170 to 280 AED</td></tr>
+<tr><td>Full version with CO₂ and GPS</td><td>about 300 to 550 AED</td></tr>
+<tr><td>Website hosting and NASA data</td><td>free</td></tr>
+</table>`,
+`<h2>Our website</h2>
+<p>A live NASA Earth Observation dashboard with MERRA-2 temperature, SMAP soil moisture, El Niño tracking, hazards and an ISS tracker.</p>
+<p><a href="https://schrodingers-cat-nasa.vercel.app/" target="_blank" rel="noopener">schrodingers-cat-nasa.vercel.app</a></p>`,
+`<h1>Thank you!</h1>
+<svg class="pulse" viewBox="0 0 400 70" aria-hidden="true"><path d="M0 38 H120 L140 38 L156 8 L176 62 L192 24 L204 38 H400"/></svg>
+<p class="mute">Earth Pulse Field Station<br>Team Schrödinger’s Cat</p>`
+];
+var book=document.getElementById('book'),cur=0,n=pages.length,leaves=[];
+pages.forEach(function(html,i){
+  var l=document.createElement('div');l.className='leaf';l.style.zIndex=n-i;
+  l.innerHTML='<div class="face front">'+html+'<div class="pn"><span>Earth Pulse</span><span>'+(i+1)+' / '+n+'</span></div></div><div class="face rear"></div>';
+  l.addEventListener('click',function(e){if(e.target.closest('a'))return;var r=l.getBoundingClientRect();(i===cur&&e.clientX>r.left+r.width*0.25)?go(1):go(-1)});
+  book.appendChild(l);leaves.push(l);
+});
+function render(){
+  leaves.forEach(function(l,i){
+    var f=i<cur;l.classList.toggle('flipped',f);
+    l.style.zIndex=f?i+1:n-i;
+  });
+  document.getElementById('count').textContent='Page '+(cur+1)+' of '+n;
+  document.getElementById('prev').disabled=cur===0;
+  document.getElementById('next').disabled=cur===n-1;
+}
+function go(d){var t=cur+d;if(t<0||t>n-1)return;cur=t;render();}
+document.getElementById('next').onclick=function(){go(1)};
+document.getElementById('prev').onclick=function(){go(-1)};
+document.addEventListener('keydown',function(e){if(e.key==='ArrowRight')go(1);if(e.key==='ArrowLeft')go(-1)});
+var sx=null;
+document.addEventListener('touchstart',function(e){sx=e.touches[0].clientX},{passive:true});
+document.addEventListener('touchend',function(e){if(sx===null)return;var dx=e.changedTouches[0].clientX-sx;if(Math.abs(dx)>50)go(dx<0?1:-1);sx=null});
+render();
+</script>
+</body>
+</html>
